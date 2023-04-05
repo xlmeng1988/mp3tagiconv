@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Reencode the ID3v1 and ID3v2 tag of a mp3 file.
 # Copyright 2010 CHEN, Xing (cxcxcxcx@gmail.com)
 #
@@ -34,22 +34,22 @@ def MakeID3v1(id3, enc):
         if v2id in id3:
             text = id3[v2id].text[0].encode(enc, 'replace')[:30]
         else:
-            text = ""
-        v1[name] = text + ("\x00" * (30 - len(text)))
+            text = b""
+        v1[name] = text + (b"\x00" * (30 - len(text)))
 
     if "COMM" in id3:
         cmnt = id3["COMM"].text[0].encode(enc, 'replace')[:28]
     else:
-        cmnt = ""
-    v1["comment"] = cmnt + ("\x00" * (29 - len(cmnt)))
+        cmnt = b""
+    v1["comment"] = cmnt + (b"\x00" * (29 - len(cmnt)))
 
     if "TRCK" in id3:
         try:
             v1["track"] = chr(+id3["TRCK"])
         except ValueError:
-            v1["track"] = "\x00"
+            v1["track"] = b"\x00"
     else:
-        v1["track"] = "\x00"
+        v1["track"] = b"\x00"
 
     if "TCON" in id3:
         try:
@@ -60,14 +60,14 @@ def MakeID3v1(id3, enc):
             TCON = id3["TCON"]
             if genre in TCON.GENRES:
                 v1["genre"] = chr(TCON.GENRES.index(genre))
-    if "genre" not in v1: v1["genre"] = "\xff"
+    if "genre" not in v1: v1["genre"] = b"\xff"
 
     if "TDRC" in id3:
         v1["year"] = str(id3["TDRC"])[:4]
     elif "TYER" in id3:
         v1["year"] = str(id3["TYER"])[:4]
     else:
-        v1["year"] = "\x00\x00\x00\x00"
+        v1["year"] = b"\x00\x00\x00\x00"
 
     return ("TAG%(title)s%(artist)s%(album)s%(year)s%(comment)s"
             "%(track)s%(genre)s") % v1
@@ -116,7 +116,7 @@ def saveTagToFile(filename, fileID3, v1enc):
         hasID3v1 = has_id3v1(filename)
         try:
             f = open(filename, 'rb+')
-        except IOError, err:
+        except IOError as err:
             from errno import ENOENT
             if err.errno != ENOENT: raise
             f = open(filename, 'ab')  # create, then reopen
@@ -131,7 +131,7 @@ def saveTagToFile(filename, fileID3, v1enc):
                 f.truncate()
         elif v1 == 2:
             f.seek(0, 2)
-            f.write(MakeID3v1(fileID3, v1enc))
+            f.write(str.encode(MakeID3v1(fileID3, v1enc)))
     finally:
         f.close()
 
@@ -181,7 +181,7 @@ def main(argv):
 
     enc = locale.getpreferredencoding()
     for filename in args:
-        print "--", filename
+        print ("--", filename)
         try:
             # Prepare information from ID3v1
             id3v1 = get_id3v1(filename)
@@ -208,7 +208,7 @@ def main(argv):
                 try:
                     # print frame.encoding
                     if frame.encoding == 0:
-                        text = map(convTxt, [enclist, ] * len(frame.text), frame.text)
+                        text = list(map(convTxt, [enclist, ] * len(frame.text), frame.text))
                 except (UnicodeError, LookupError):
                     continue
                 else:
@@ -219,30 +219,30 @@ def main(argv):
                         frame.encoding = 3
                     else:
                         frame.encoding = 1
-                print frame.pprint().encode(enc)
+                print (frame.pprint().encode(enc))
 
             doSave = False
             if notest:
                 doSave = True
             else:
                 # print fileID3.pprint().encode(enc)
-                print "Do you want to save?(y/N)",
-                p = raw_input()
+                print ("Do you want to save?(y/N)")
+                p = input()
                 doSave = p == "y" or p == "Y"
 
             if doSave:
-                print "*** Saving..."
+                print ("*** Saving...")
                 saveTagToFile(filename, fileID3, v1enc)
             else:
                 print
-                print "*** File is NOT updated."
+                print ("*** File is NOT updated.")
 
         except AttributeError:
-            print "- Unknown file type"
+            print ("- Unknown file type")
         except KeyboardInterrupt:
             raise
-        except Exception, err:
-            print str(err)
+        except Exception as err:
+            print (str(err))
         print
 
 
