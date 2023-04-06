@@ -73,16 +73,6 @@ def MakeID3v1(id3, enc):
             "%(track)s%(genre)s") % v1
 
 
-def has_id3v1(filename):
-    f = open(filename, 'rb+')
-    try:
-        f.seek(-128, 2)
-    except IOError:
-        pass
-    else:
-        return (f.read(3) == "TAG")
-
-
 def get_id3v1(filename):
     id3v1 = None
     f = open(filename, 'rb+')
@@ -94,6 +84,9 @@ def get_id3v1(filename):
         id3v1 = mutagen.id3.ParseID3v1(f.read(128))
     return id3v1
 
+def has_id3v1(filename):
+    id3v1 = get_id3v1(filename)
+    return (id3v1 is not None)
 
 def convTxt(encList, s):
     decF = s
@@ -110,7 +103,8 @@ def convTxt(encList, s):
 
 def saveTagToFile(filename, fileID3, v1enc):
     """ Update the file."""
-    fileID3.save(v1=1)
+    fileID3.save(v1=1, v2_version=fileID3.version[1])
+    return
 
     try:
         hasID3v1 = has_id3v1(filename)
